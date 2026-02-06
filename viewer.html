@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Transcription</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e8e8e8;
+            min-height: 100vh;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .btn {
+            padding: 12px 32px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: #0f172a;
+        }
+
+        .btn-start:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(74, 222, 128, 0.4);
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, #f87171, #ef4444);
+            color: white;
+        }
+
+        .btn-stop:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(248, 113, 113, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(102, 126, 234, 0.15);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: #a0a0a0;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .status-dot.active {
+            background: #4ade80;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-dot.inactive {
+            background: #6b7280;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(0.9);
+            }
+        }
+
+        #transcript {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 30px;
+            min-height: 60vh;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        #transcript::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #transcript::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #transcript::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 40vh;
+            color: #666;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .entry {
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .entry:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .timestamp {
+            font-size: 0.85rem;
+            color: #667eea;
+            margin-bottom: 8px;
+            font-family: 'SF Mono', 'Consolas', monospace;
+        }
+
+        .text {
+            font-size: 1.4rem;
+            line-height: 1.6;
+            color: #f0f0f0;
+        }
+
+        .new-indicator {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 10px;
+            vertical-align: middle;
+            animation: fadeOut 3s forwards;
+        }
+
+        @keyframes fadeOut {
+
+            0%,
+            80% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🎙️ Live Transcription</h1>
+            <div class="controls">
+                <button class="btn btn-start" id="startBtn" onclick="startRecording()">
+                    ▶ Start Recording
+                </button>
+                <button class="btn btn-stop" id="stopBtn" onclick="stopRecording()" disabled>
+                    ⏹ Stop & Save
+                </button>
+            </div>
+            <div class="status" id="statusBar">
+                <span class="status-dot inactive" id="statusDot"></span>
+                <span id="statusText">Ready to record</span>
+            </div>
+        </header>
+
+        <div id="transcript">
+            <div class="empty-state" id="empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    <line x1="12" y1="19" x2="12" y2="22" />
+                </svg>
+                <p>Click "Start Recording" to begin</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const transcriptEl = document.getElementById('transcript');
+        const emptyEl = document.getElementById('empty');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        let lastCount = 0;
+        let isRecording = false;
+
+        async function startRecording() {
+            try {
+                const response = await fetch('/api/start', { method: 'POST' });
+                if (response.ok) {
+                    isRecording = true;
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    statusDot.className = 'status-dot active';
+                    statusText.textContent = 'Recording...';
+                    if (emptyEl) {
+                        emptyEl.querySelector('p').textContent = 'Listening for speech...';
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to start:', e);
+            }
+        }
+
+        async function stopRecording() {
+            try {
+                const response = await fetch('/api/stop', { method: 'POST' });
+                if (response.ok) {
+                    isRecording = false;
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                    statusDot.className = 'status-dot inactive';
+                    statusText.textContent = 'Stopped - transcript saved';
+                }
+            } catch (e) {
+                console.error('Failed to stop:', e);
+            }
+        }
+
+        async function fetchTranscript() {
+            try {
+                const response = await fetch('/transcript.json?' + Date.now());
+                const data = await response.json();
+
+                if (data.length > 0 && emptyEl && emptyEl.parentNode) {
+                    emptyEl.remove();
+                }
+
+                if (data.length > lastCount) {
+                    for (let i = lastCount; i < data.length; i++) {
+                        const entry = data[i];
+                        const div = document.createElement('div');
+                        div.className = 'entry';
+                        div.innerHTML = `
+                            <div class="timestamp">${entry.time}<span class="new-indicator">NEW</span></div>
+                            <div class="text">${escapeHtml(entry.text)}</div>
+                        `;
+                        transcriptEl.appendChild(div);
+                    }
+                    transcriptEl.scrollTop = transcriptEl.scrollHeight;
+                    lastCount = data.length;
+                }
+            } catch (e) {
+                // Server not ready yet
+            }
+        }
+
+        async function checkStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                isRecording = data.recording;
+                startBtn.disabled = isRecording;
+                stopBtn.disabled = !isRecording;
+                statusDot.className = isRecording ? 'status-dot active' : 'status-dot inactive';
+                statusText.textContent = isRecording ? 'Recording...' : 'Ready to record';
+            } catch (e) {
+                // Server not ready
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        setInterval(fetchTranscript, 500);
+        setInterval(checkStatus, 1000);
+        fetchTranscript();
+        checkStatus();
+    </script>
+
+    <footer style="text-align: center; margin-top: 40px; padding: 20px; color: #666; font-size: 0.9rem;">
+        Made by <a href="https://github.com/muskaanX" target="_blank"
+            style="color: #667eea; text-decoration: none;">Muskaan Chugh</a>
+    </footer>
+</body>
+
+</html>
