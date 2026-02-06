@@ -120,12 +120,16 @@ def transcription_worker(model):
             print(f"Error: {e}")
 
 def save_transcript_md():
-    # saving transcript to markdown file
+    # saving transcript to markdown file in transcripts folder
     if not transcript:
         print("No transcript to save!")
         return
     
-    filename = os.path.join(SCRIPT_DIR, f"transcript_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md")
+    # create transcripts folder if it doesn't exist
+    transcripts_dir = os.path.join(SCRIPT_DIR, "transcripts")
+    os.makedirs(transcripts_dir, exist_ok=True)
+    
+    filename = os.path.join(transcripts_dir, f"transcript_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.md")
     with open(filename, "w") as f:
         f.write("# Transcript\n\n")
         f.write(f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n")

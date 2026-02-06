@@ -1,5 +1,7 @@
 ## Live Transcription Tool
 
+Built using Python 3.14.2
+
 To use, run the following commands in terminal:
 
 Step 1: Clone the repository to the Desktop folder
