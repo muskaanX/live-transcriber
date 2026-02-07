@@ -1,6 +1,6 @@
 ## Live Transcription Tool
 
-Built using Python 3.14.2
+Python Version: 3.14.2
 
 To use, run the following commands in terminal:
 
