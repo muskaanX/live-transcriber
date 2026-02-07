@@ -17,8 +17,8 @@ from faster_whisper import WhisperModel
 # CONFIGURATION
 SAMPLE_RATE = 16000          # Hz (Whisper expects 16kHz)
 MODEL_SIZE = "small"         # tiny, base, small, medium, large
-SILENCE_THRESHOLD = 0.015    # volume below this = silence
-SILENCE_DURATION = 1.5       # seconds of silence to trigger transcription
+SILENCE_THRESHOLD = 0.02     # volume below this = silence
+SILENCE_DURATION = 0.95       # seconds of silence to trigger transcription
 MIN_AUDIO_LENGTH = 0.3       # minimum seconds of audio to transcribe
 CHUNK_SIZE = 1024            # audio buffer size
 WEB_PORT = 8080              # port for web viewer
